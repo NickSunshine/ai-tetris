@@ -168,3 +168,6 @@ sessions/
 
 # Credentials
 *creds.json
+
+# Tensorboard Files
+*.0

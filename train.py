@@ -8,7 +8,10 @@ from stable_baselines3.common.logger import Logger, make_output_format
 
 from agent import AgentTrainer
 from ensign_writer import EnsignWriter
+from tensorboard_writer import TensorboardWriter
 from tetris_env import TetrisEnv
+
+from writer_factory import get_writer
 
 def parse_args():
     # Parse the command line arguments
@@ -32,26 +35,59 @@ def parse_args():
     return parser.parse_args()
 
 async def train(args):
-    # Create Ensign client
-    ensign = Ensign(cred_path=args.creds)
+    # Create the writer using the factory
+    writer = get_writer()
+
+    # Create Ensign client if using EnsignWriter
+    ensign = None
+    if isinstance(writer, EnsignWriter):
+        ensign = Ensign(cred_path=args.creds)
 
     # Configure the environment, model, and trainer
     agent_id = ULID()
-    env = TetrisEnv(gb_path=args.rom, action_freq=args.freq, speedup=args.speedup, init_state=args.init, log_level=args.log_level, window="headless")
-    trainer = AgentTrainer(ensign=ensign, model_topic=args.model_topic, agent_id=agent_id)
-    model = PPO(args.policy, env, verbose=1, n_steps=args.steps, batch_size=args.batch_size, n_epochs=args.epochs, gamma=args.gamma)
+    env = TetrisEnv(
+        gb_path=args.rom,
+        action_freq=args.freq,
+        speedup=args.speedup,
+        init_state=args.init,
+        log_level=args.log_level,
+        window="headless"
+    )
+    trainer = AgentTrainer(
+        ensign=ensign,
+        model_topic=args.model_topic,
+        agent_id=agent_id
+    )
+    model = PPO(
+        args.policy,
+        env,
+        verbose=1,
+        n_steps=args.steps,
+        batch_size=args.batch_size,
+        n_epochs=args.epochs,
+        gamma=args.gamma
+    )
 
     # Set logging outputs
     output_formats = []
     if args.log_stdout:
         output_formats.append(make_output_format("stdout", "sessions"))
-    if args.session_topic:
-        writer = EnsignWriter(ensign, topic=args.session_topic, agent_id=agent_id)
+    if isinstance(writer, EnsignWriter) or isinstance(writer, TensorboardWriter):
         output_formats.append(writer)
     model.set_logger(Logger(None, output_formats=output_formats))
 
+    # Train the model
     await trainer.train(model, sessions=args.sessions, runs_per_session=args.runs)
-    await ensign.close()
+
+    # Save the model locally
+    model.save("models/saved_model.pth")
+
+    # Close the writer
+    writer.close()
+
+    # Close the Ensign client if used
+    if ensign:
+        await ensign.close()
 
 
 if __name__ == "__main__":

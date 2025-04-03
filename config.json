@@ -1,0 +1,4 @@
+{
+    "writer_type": "tensorboard",
+    "log_dir": "logs/tensorboard"
+}

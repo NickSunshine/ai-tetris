@@ -5,3 +5,5 @@ pyboy==1.5.6
 pyensign==0.11b0
 python-ulid==2.2.0
 stable-baselines3==2.1.0
+torch==2.0.1
+tensorboard==2.13.0
