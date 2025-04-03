@@ -1,26 +1,21 @@
-import asyncio
 import argparse
-
+import os
+from datetime import datetime
 from ulid import ULID
 from stable_baselines3 import PPO
-from pyensign.ensign import Ensign
 from stable_baselines3.common.logger import Logger, make_output_format
 
 from agent import AgentTrainer
-from ensign_writer import EnsignWriter
+from writer_factory import get_writer
+from base_writer import BaseWriter
 from tensorboard_writer import TensorboardWriter
 from tetris_env import TetrisEnv
 
-from writer_factory import get_writer
-from base_writer import BaseWriter
 
-import os
-from datetime import datetime
 
 def parse_args():
     # Parse the command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("--creds", type=str, default="ensign_creds.json", help="Path to your Ensign credentials file.")
     parser.add_argument("--rom", type=str, default="roms/tetris.gb", help="Path to the ROM file.")
     parser.add_argument("--init", type=str, default="states/init.state", help="Path to the initial state.")
     parser.add_argument("--speedup", type=int, default=5, help="Speedup factor.")
@@ -33,19 +28,20 @@ def parse_args():
     parser.add_argument("--sessions", type=int, default=40, help="Number of training sessions.")
     parser.add_argument("--runs", type=int, default=4, help="Number of runs per session.")
     parser.add_argument("--session-topic", type=str, default="agent-sessions", help="Topic for publishing session events.")
-    parser.add_argument("--model-topic", type=str, default="agent-models", help="Topic for publishing model events.")
     parser.add_argument("--log-stdout", type=bool, default=True, help="Log session events to stdout.")
     parser.add_argument("--log-level", type=str, default="ERROR", help="Logging level.")
     return parser.parse_args()
 
-async def train(args):
+def train(args):
+    
+    # Ensure directories exist for saving models and logging
+    model_dir = "models"
+    os.makedirs(model_dir, exist_ok=True)
+    log_dir = os.path.join("logs", "tensorboard")
+    os.makedirs(log_dir, exist_ok=True)
+
     # Create the writer using the factory
     writer: BaseWriter = get_writer()
-
-    # Create Ensign client if using EnsignWriter
-    ensign = None
-    if isinstance(writer, EnsignWriter):
-        ensign = Ensign(cred_path=args.creds)
 
     # Configure the environment, model, and trainer
     agent_id = ULID()
@@ -59,9 +55,7 @@ async def train(args):
     )
     trainer = AgentTrainer(
         writer=writer, # Pass the generic writer to the trainer
-        ensign=ensign,
-        model_topic=args.model_topic,
-        model_dir="models",
+        model_dir=model_dir,
         agent_id=agent_id
     )
     model = PPO(
@@ -78,19 +72,18 @@ async def train(args):
     output_formats = []
     if args.log_stdout:
         output_formats.append(make_output_format("stdout", "sessions"))
-    if isinstance(writer, EnsignWriter) or isinstance(writer, TensorboardWriter):
+    if isinstance(writer, TensorboardWriter):
         output_formats.append(writer)
     model.set_logger(Logger(None, output_formats=output_formats))
 
     # Train the model
-    await trainer.train(model, sessions=args.sessions, runs_per_session=args.runs)
+    trainer.train(model, sessions=args.sessions, runs_per_session=args.runs)
 
     # Save the model locally
-    os.makedirs("models", exist_ok=True)
     timestamp = datetime.now()
     model_name = model.__class__.__name__
     model.save( os.path.join( 
-                    "models",
+                    model_dir,
                     "{}_{}.zip".format(model_name, timestamp.strftime("%Y%m%d-%H%M%S")),
                     )
     )
@@ -98,10 +91,5 @@ async def train(args):
     # Close the writer
     writer.close()
 
-    # Close the Ensign client if used
-    if ensign:
-        await ensign.close()
-
-
 if __name__ == "__main__":
-    asyncio.run(train(parse_args()))
+    train(parse_args())

@@ -1,5 +1,4 @@
 import json
-from ensign_writer import EnsignWriter
 from tensorboard_writer import TensorboardWriter
 
 def get_writer(config_path="config.json"):
@@ -14,7 +13,5 @@ def get_writer(config_path="config.json"):
 
     if writer_type == "tensorboard":
         return TensorboardWriter(log_dir=log_dir)
-    elif writer_type == "ensign":
-        return EnsignWriter(ensign_client=None)
     else:
         raise ValueError(f"Unsupported writer type: {writer_type}")
