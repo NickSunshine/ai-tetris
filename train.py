@@ -87,11 +87,11 @@ async def train(args):
 
     # Save the model locally
     os.makedirs("models", exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    timestamp = datetime.now()
     model_name = model.__class__.__name__
     model.save( os.path.join( 
                     "models",
-                    "{}_{}.zip".format(model_name, timestamp("%Y%m%d-%H%M%S")),
+                    "{}_{}.zip".format(model_name, timestamp.strftime("%Y%m%d-%H%M%S")),
                     )
     )
     

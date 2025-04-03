@@ -34,12 +34,14 @@ class AgentTrainer:
             os.makedirs(self.model_dir, exist_ok=True)
 
         # Train for the number of sessions
+        overall_duration = None
         for session in range(sessions):
             print(f"Training session {session + 1}/{sessions} for {model_name} with policy {policy_name}...")
             session_start = datetime.now()
             model.learn(total_timesteps=model.n_steps * runs_per_session)
             session_end = datetime.now()
             duration = session_end - session_start
+            overall_duration = duration if overall_duration is None else overall_duration + duration
 
             # Ensure that async loggers have a chance to run
             await asyncio.sleep(5)
@@ -47,14 +49,17 @@ class AgentTrainer:
             # Log training metrics using the writer
             self.writer.write(
                 {
-                    "session": session + 1,
-                    "train_duration_seconds": duration.total_seconds(),
-                    "total_timesteps": (session + 1) * runs_per_session * model.n_steps,
+                    "session_number": session + 1,
+                    "session_train_duration_seconds": duration.total_seconds(),
+                    "overall_train_duration_seconds": overall_duration.total_seconds(),
+                    "overall_total_timesteps": (session + 1) * runs_per_session * model.n_steps,
                 },
                 key_excluded=[],
                 step=session + 1,
             )
-            print(f"Total timesteps so far: {(session + 1) * runs_per_session * model.n_steps}")
+            print(f"Total duration so far: {overall_duration.total_seconds()} seconds")
+            print(f"Total timesteps so far: {(session + 1) * runs_per_session * model.n_steps} steps")
+
             # Save the model
             if self.ensign:
                 buffer = io.BytesIO()
