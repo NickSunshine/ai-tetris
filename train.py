@@ -7,7 +7,7 @@ from pyensign.ensign import Ensign
 from stable_baselines3.common.logger import Logger, make_output_format
 
 from agent import AgentTrainer
-from writer import EnsignWriter
+from ensign_writer import EnsignWriter
 from tetris_env import TetrisEnv
 
 def parse_args():
