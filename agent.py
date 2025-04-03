@@ -1,14 +1,13 @@
 import os
 from datetime import datetime
 from ulid import ULID
-from base_writer import BaseWriter
 
 class AgentTrainer:
     """
     AgentTrainer can train and evaluate an agent for a reinforcement learning task.
     """
 
-    def __init__(self, writer: BaseWriter, model_dir="", agent_id=ULID()):
+    def __init__(self, writer, model_dir="", agent_id=ULID()):
         self.writer = writer
         self.agent_id = agent_id
         self.model_dir = model_dir

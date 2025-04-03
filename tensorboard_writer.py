@@ -1,9 +1,8 @@
 import os
 from stable_baselines3.common.logger import KVWriter
 from torch.utils.tensorboard import SummaryWriter
-from base_writer import BaseWriter
 
-class TensorboardWriter(BaseWriter, KVWriter):
+class TensorboardWriter(KVWriter):
     """
     TensorboardWriter subclasses both BaseWriter and KVWriter to write key-value pairs to TensorBoard.
     """

@@ -6,8 +6,6 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.logger import Logger, make_output_format
 
 from agent import AgentTrainer
-from writer_factory import get_writer
-from base_writer import BaseWriter
 from tensorboard_writer import TensorboardWriter
 from tetris_env import TetrisEnv
 
@@ -41,7 +39,7 @@ def train(args):
     os.makedirs(log_dir, exist_ok=True)
 
     # Create the writer using the factory
-    writer: BaseWriter = get_writer()
+    writer = TensorboardWriter(log_dir=log_dir)
 
     # Configure the environment, model, and trainer
     agent_id = ULID()
@@ -55,7 +53,7 @@ def train(args):
     )
     trainer = AgentTrainer(
         writer=writer, # Pass the generic writer to the trainer
-        model_dir=model_dir,
+        model_dir="",
         agent_id=agent_id
     )
     model = PPO(
