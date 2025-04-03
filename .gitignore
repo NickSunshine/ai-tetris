@@ -171,3 +171,6 @@ sessions/
 
 # Tensorboard Files
 *.0
+
+# Models
+*.zip

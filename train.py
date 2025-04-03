@@ -12,6 +12,10 @@ from tensorboard_writer import TensorboardWriter
 from tetris_env import TetrisEnv
 
 from writer_factory import get_writer
+from base_writer import BaseWriter
+
+import os
+from datetime import datetime
 
 def parse_args():
     # Parse the command line arguments
@@ -36,7 +40,7 @@ def parse_args():
 
 async def train(args):
     # Create the writer using the factory
-    writer = get_writer()
+    writer: BaseWriter = get_writer()
 
     # Create Ensign client if using EnsignWriter
     ensign = None
@@ -54,8 +58,10 @@ async def train(args):
         window="headless"
     )
     trainer = AgentTrainer(
+        writer=writer, # Pass the generic writer to the trainer
         ensign=ensign,
         model_topic=args.model_topic,
+        model_dir="models",
         agent_id=agent_id
     )
     model = PPO(
@@ -80,8 +86,15 @@ async def train(args):
     await trainer.train(model, sessions=args.sessions, runs_per_session=args.runs)
 
     # Save the model locally
-    model.save("models/saved_model.pth")
-
+    os.makedirs("models", exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    model_name = model.__class__.__name__
+    model.save( os.path.join( 
+                    "models",
+                    "{}_{}.zip".format(model_name, timestamp("%Y%m%d-%H%M%S")),
+                    )
+    )
+    
     # Close the writer
     writer.close()
 

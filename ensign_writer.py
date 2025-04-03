@@ -5,10 +5,11 @@ import logging
 import numpy as np
 from pyensign.events import Event
 from stable_baselines3.common.logger import KVWriter, filter_excluded_keys
+from base_writer import BaseWriter
 
-class EnsignWriter(KVWriter):
+class EnsignWriter(BaseWriter, KVWriter):
     """
-    EnsignWriter subclasses the Stable Baselines3 KVWriter class to write key-value pairs to Ensign.
+    EnsignWriter subclasses both BaseWriter and KVWriter to write key-value pairs to Ensign.
     """
 
     def __init__(self, ensign, topic="agent-training", agent_id=None):

@@ -1,10 +1,11 @@
 import os
 from stable_baselines3.common.logger import KVWriter
 from torch.utils.tensorboard import SummaryWriter
+from base_writer import BaseWriter
 
-class TensorboardWriter(KVWriter):
+class TensorboardWriter(BaseWriter, KVWriter):
     """
-    TensorboardWriter subclasses the Stable Baselines3 KVWriter class to write key-value pairs to TensorBoard.
+    TensorboardWriter subclasses both BaseWriter and KVWriter to write key-value pairs to TensorBoard.
     """
 
     def __init__(self, log_dir="logs/tensorboard"):
@@ -46,7 +47,11 @@ class TensorboardWriter(KVWriter):
         # Log all key-value pairs dynamically
         for key, value in key_values.items():
             if key not in key_excluded:
-                self.writer.add_scalar(key, value, step)
+                try:
+                    self.writer.add_scalar(key, value, step)
+                except ModuleNotFoundError as e:
+                    if "caffe2" in str(e):
+                        print(f"Warning: {e} (skipping this metric) key: {key}, value: {value}, step: {step}")
 
     def close(self):
         """
