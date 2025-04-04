@@ -75,7 +75,7 @@ class TetrisEnv(Env):
         ]
 
         self.sprite_tiles = [i for i in range(120, 140)]
-        self.output_shape = (18, 10)
+        self.output_shape = (1, 18, 10)
         self.action_space = spaces.Discrete(len(self.valid_actions))
         self.board = np.zeros(self.output_shape)
         self.observation_space = spaces.Box(
@@ -142,6 +142,9 @@ class TetrisEnv(Env):
                 tile_y = sprite.y // 8
                 if tile_x < self.output_shape[1] and tile_y < self.output_shape[0]:
                     self.observation[tile_y, tile_x] = 1
+        
+        # Add a channel dimension to the observation
+        self.observation = np.expand_dims(self.observation, axis=0)  # Shape becomes (1, 18, 10)
         logging.debug("Board State:\n{}".format(self.observation))
         return self.observation
 

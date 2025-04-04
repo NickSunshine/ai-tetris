@@ -25,7 +25,7 @@ class AgentTrainer:
 
         # Train for the number of sessions
         for session in range(sessions):
-            print(f"Training session {session + 1}/{sessions} for {model_name} with policy {policy_name}...")
+            print(f"Training session {session + 1}/{sessions}...")
             session_start = datetime.now()
             model.learn(total_timesteps=model.n_steps * runs_per_session)
             session_end = datetime.now()

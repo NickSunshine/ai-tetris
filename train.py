@@ -10,8 +10,7 @@ from stable_baselines3.common.logger import Logger, make_output_format
 from agent import AgentTrainer
 from tensorboard_writer import TensorboardWriter
 from tetris_env import TetrisEnv
-
-
+from custom_cnn import CustomCNN
 
 def parse_args():
     # Parse the command line arguments
@@ -20,7 +19,6 @@ def parse_args():
     parser.add_argument("--init", type=str, default="states/init.state", help="Path to the initial state.")
     parser.add_argument("--speedup", type=int, default=5, help="Speedup factor.")
     parser.add_argument("--freq", type=int, default=24, help="Action frequency.")
-    parser.add_argument("--policy", type=str, default="MlpPolicy", help="Model policy to use.")
     parser.add_argument("--batch_size", type=int, default=64, help="Batch size for training.")
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training.")
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor for training.")
@@ -51,6 +49,7 @@ def train(args):
         init_state=args.init,
         log_level=args.log_level,
         window="headless"
+        
     )
 
     # Load metrics and the latest model if requested
@@ -76,16 +75,23 @@ def train(args):
     # If no model was loaded, create a new one
     if model is None:
         print("Training a new model from scratch...")
+        policy_kwargs = dict(
+            features_extractor_class=CustomCNN,
+            features_extractor_kwargs=dict(features_dim=256),
+            normalize_images=False  # Disable image normalization since your input is already normalized
+        )
         model = PPO(
-            args.policy,
+            "CnnPolicy",  # Use CnnPolicy to leverage the CustomCNN features extractor
             env,
             verbose=1,
             n_steps=args.steps,
             batch_size=args.batch_size,
             n_epochs=args.epochs,
-            gamma=args.gamma
+            gamma=args.gamma,
+            policy_kwargs=policy_kwargs
         )
-
+    print(f"Model details: {model.policy}")
+    
     # Set logging outputs
     output_formats = []
     if args.log_stdout:
