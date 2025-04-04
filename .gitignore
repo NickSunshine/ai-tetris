@@ -162,6 +162,7 @@ cython_debug/
 # GB files
 *.gb
 *.gbc
+*.gb.ram
 
 # Session logs
 sessions/

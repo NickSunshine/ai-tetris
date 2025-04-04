@@ -89,6 +89,7 @@ class TetrisEnv(Env):
             disable_input=False,
             window_type=self.window,
             hide_window=False,
+            # sound=True,
         )
 
         self.screen = self.pyboy.botsupport_manager().screen()
@@ -113,7 +114,7 @@ class TetrisEnv(Env):
     def step(self, action):
         self.do_input(self.valid_actions[action])
         observation = self.render()
-        if observation[0].sum() >= len(observation[0]):
+        if observation[0][0].sum() >= len(observation[0][0]):
             # Game over
             return observation, -100, True, False, {}
         
