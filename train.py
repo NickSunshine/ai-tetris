@@ -75,22 +75,23 @@ def train(args):
     # If no model was loaded, create a new one
     if model is None:
         print("Training a new model from scratch...")
-        policy_kwargs = dict(
-            features_extractor_class=CustomCNN,
-            features_extractor_kwargs=dict(features_dim=256),
-            normalize_images=False  # Disable image normalization since your input is already normalized
-        )
+        #policy_kwargs = dict(
+            #features_extractor_class=CustomCNN,
+            #features_extractor_kwargs=dict(features_dim=256),
+            #normalize_images=False  # Disable image normalization since your input is already normalized
+        #)
         model = PPO(
-            "CnnPolicy",  # Use CnnPolicy to leverage the CustomCNN features extractor
+            #"CnnPolicy",  # Use CnnPolicy to leverage the CustomCNN features extractor
+            "MlpPolicy",  # Fallback to MlpPolicy if CnnPolicy is not suitable for your environment
             env,
             verbose=1,
             n_steps=args.steps,
             batch_size=args.batch_size,
             n_epochs=args.epochs,
             gamma=args.gamma,
-            policy_kwargs=policy_kwargs
+            #policy_kwargs=policy_kwargs
         )
-    print(f"Model details: {model.policy}")
+    #print(f"Model details: {model.policy}")
     
     # Set logging outputs
     output_formats = []
@@ -100,7 +101,7 @@ def train(args):
     model.set_logger(Logger(None, output_formats=output_formats))
 
     # Train the model
-    trainer = AgentTrainer(writer=writer, model_dir=model_dir, agent_id=agent_id)
+    trainer = AgentTrainer(writer=writer, model_dir="", agent_id=agent_id)
     trainer.train(model, sessions=args.sessions, runs_per_session=args.runs, total_timesteps=total_timesteps)
 
     # Save the model locally
