@@ -174,3 +174,6 @@ sessions/
 
 # Models
 *.zip
+
+# Training Metrics
+training_metrics.json
