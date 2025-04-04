@@ -51,6 +51,6 @@ class AgentTrainer:
                 model.save(
                     os.path.join(
                         self.model_dir,
-                        "{}_{}.zip".format(model_name, session_end.strftime("%Y%m%d-%H%M%S")),
+                        "{}_{}.zip".format(session_end.strftime("%Y%m%d-%H%M%S"), total_timesteps),
                     )
                 )

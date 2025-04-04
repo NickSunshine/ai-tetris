@@ -32,7 +32,7 @@ def parse_args():
 
 def train(args):
     # Ensure directories exist for saving models and logging
-    model_dir = "models"
+    model_dir = "models-ppo-mlp"
     os.makedirs(model_dir, exist_ok=True)
     log_dir = os.path.join("logs", "tensorboard")
     os.makedirs(log_dir, exist_ok=True)
@@ -80,9 +80,11 @@ def train(args):
             #features_extractor_kwargs=dict(features_dim=256),
             #normalize_images=False  # Disable image normalization since your input is already normalized
         #)
+        policy = "MlpPolicy"
         model = PPO(
             #"CnnPolicy",  # Use CnnPolicy to leverage the CustomCNN features extractor
-            "MlpPolicy",  # Fallback to MlpPolicy if CnnPolicy is not suitable for your environment
+            #"MlpPolicy",  # Fallback to MlpPolicy if CnnPolicy is not suitable for your environment
+            policy,
             env,
             verbose=1,
             n_steps=args.steps,
@@ -101,20 +103,22 @@ def train(args):
     model.set_logger(Logger(None, output_formats=output_formats))
 
     # Train the model
-    trainer = AgentTrainer(writer=writer, model_dir="", agent_id=agent_id)
+    trainer = AgentTrainer(writer=writer, model_dir=model_dir, agent_id=agent_id)
     trainer.train(model, sessions=args.sessions, runs_per_session=args.runs, total_timesteps=total_timesteps)
+
+    # Update total timesteps after training
+    total_timesteps += args.sessions * args.runs * args.steps    
 
     # Save the model locally
     timestamp = datetime.now()
     model_name = model.__class__.__name__
     model_path = os.path.join(
         model_dir,
-        "{}_{}.zip".format(model_name, timestamp.strftime("%Y%m%d-%H%M%S"))
+        "{}_{}.zip".format(timestamp.strftime("%Y%m%d-%H%M%S"), total_timesteps)
     )
     model.save(model_path)
 
     # Update metrics
-    total_timesteps += args.sessions * args.runs * args.steps
     metrics = {
         "total_timesteps": total_timesteps,
         "last_saved_model": model_path
