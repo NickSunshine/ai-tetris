@@ -6,6 +6,7 @@ import numpy as np
 import os  # For creating directories
 import matplotlib.pyplot as plt  # For plotting
 from datetime import datetime  # For generating timestamps
+import logging  # For logging
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -22,6 +23,42 @@ def parse_args():
     return parser.parse_args()
 
 def eval(args):
+    # Create directories for logs if they don't exist
+    log_dir = os.path.join("logs", "eval")
+    os.makedirs(log_dir, exist_ok=True)
+
+    # Generate a timestamp for the log filename
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    # Determine the policy name for the log filename
+    if args.model:
+        policy_name = os.path.basename(os.path.dirname(args.model))
+        timesteps = os.path.basename(args.model).split("_")[-1].replace(".zip", "")
+    else:
+        policy_name = "Random"
+        timesteps = "NA"
+
+    # Clean up the policy name for filenames
+    policy_name_clean = policy_name.replace("/", "_").replace("\\", "_")
+
+    # Configure logging
+    log_filename = os.path.join(log_dir, f"evaluation_{policy_name_clean}_{timesteps}_{timestamp}.log")
+    logging.basicConfig(
+        filename=log_filename,
+        filemode="w",
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        level=logging.INFO
+    )
+
+    # Add a stream handler to also log to stdout
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+    logging.getLogger().addHandler(console_handler)
+
+    # Log the start of evaluation
+    logging.info(f"Starting evaluation for policy: {policy_name}, timesteps: {timesteps}, runs: {args.runs} ")
+    
     # Configure the environment for Tetris
     env = TetrisEnv(
         gb_path=args.rom,
@@ -71,17 +108,17 @@ def eval(args):
         steps_list.append(steps)
         scores_list.append(env.get_score())
 
-        # Print the results of the run
-        print(f"Run {run + 1}/{args.runs}: Seed: {seed}, Steps: {steps}, Score: {env.get_score()}")
+        # Log the results of the run
+        logging.info(f"Run {run + 1}/{args.runs}: Seed: {seed}, Steps: {steps}, Score: {env.get_score()}")
 
     # Close the environment
     env.close()
 
     # Compute and display summary statistics
-    print("\nSummary Statistics:")
-    print(f"N: {len(steps_list)}")  # Number of runs
-    print(f"Steps - Min: {np.min(steps_list)}, Max: {np.max(steps_list)}, Avg: {np.mean(steps_list):.2f}, Std: {np.std(steps_list):.2f}")
-    print(f"Score - Min: {np.min(scores_list)}, Max: {np.max(scores_list)}, Avg: {np.mean(scores_list):.2f}, Std: {np.std(scores_list):.2f}")
+    logging.info("Summary Statistics:")
+    logging.info(f"N: {len(steps_list)}")  # Number of runs
+    logging.info(f"Steps - Min: {np.min(steps_list)}, Max: {np.max(steps_list)}, Avg: {np.mean(steps_list):.2f}, Std: {np.std(steps_list):.2f}")
+    logging.info(f"Score - Min: {np.min(scores_list)}, Max: {np.max(scores_list)}, Avg: {np.mean(scores_list):.2f}, Std: {np.std(scores_list):.2f}")
 
     # Create directories for plots if they don't exist
     histogram_dir = os.path.join("plots", "histograms")
@@ -113,7 +150,7 @@ def eval(args):
     steps_histogram_path = os.path.join(histogram_dir, f"steps_histogram_{policy_name_clean}_{timesteps}_{timestamp}.png")
     plt.savefig(steps_histogram_path)
     plt.close()
-    print(f"Histogram of steps saved to {steps_histogram_path}")
+    logging.info(f"Histogram of steps saved to {steps_histogram_path}")
 
     # Plot and save the histogram of scores
     plt.figure()
@@ -125,7 +162,7 @@ def eval(args):
     score_histogram_path = os.path.join(histogram_dir, f"scores_histogram_{policy_name_clean}_{timesteps}_{timestamp}.png")
     plt.savefig(score_histogram_path)
     plt.close()
-    print(f"Histogram of scores saved to {score_histogram_path}")
+    logging.info(f"Histogram of scores saved to {score_histogram_path}")
 
     # Plot and save the line plot of steps
     plt.figure()
@@ -137,7 +174,7 @@ def eval(args):
     steps_line_plot_path = os.path.join(histogram_dir, f"steps_lineplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
     plt.savefig(steps_line_plot_path)
     plt.close()
-    print(f"Line plot of steps saved to {steps_line_plot_path}")
+    logging.info(f"Line plot of steps saved to {steps_line_plot_path}")
 
     # Plot and save the line plot of scores
     plt.figure()
@@ -149,7 +186,7 @@ def eval(args):
     score_line_plot_path = os.path.join(histogram_dir, f"scores_lineplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
     plt.savefig(score_line_plot_path)
     plt.close()
-    print(f"Line plot of scores saved to {score_line_plot_path}")
+    logging.info(f"Line plot of scores saved to {score_line_plot_path}")
 
     # Plot and save the boxplot of steps
     plt.figure()
@@ -160,7 +197,7 @@ def eval(args):
     steps_boxplot_path = os.path.join(histogram_dir, f"steps_boxplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
     plt.savefig(steps_boxplot_path)
     plt.close()
-    print(f"Boxplot of steps saved to {steps_boxplot_path}")
+    logging.info(f"Boxplot of steps saved to {steps_boxplot_path}")
 
     # Plot and save the boxplot of scores
     plt.figure()
@@ -171,7 +208,7 @@ def eval(args):
     scores_boxplot_path = os.path.join(histogram_dir, f"scores_boxplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
     plt.savefig(scores_boxplot_path)
     plt.close()
-    print(f"Boxplot of scores saved to {scores_boxplot_path}")
+    logging.info(f"Boxplot of scores saved to {scores_boxplot_path}")
 
     # Plot and save the scatterplot of steps vs. scores
     plt.figure()
@@ -183,7 +220,7 @@ def eval(args):
     scatter_plot_path = os.path.join(histogram_dir, f"scatterplot_steps_vs_scores_{policy_name_clean}_{timesteps}_{timestamp}.png")
     plt.savefig(scatter_plot_path)
     plt.close()
-    print(f"Scatterplot of steps vs. scores saved to {scatter_plot_path}")
+    logging.info(f"Scatterplot of steps vs. scores saved to {scatter_plot_path}")
 
 if __name__ == "__main__":
     eval(parse_args())
