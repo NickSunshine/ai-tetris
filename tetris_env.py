@@ -107,7 +107,7 @@ class TetrisEnv(Env):
                 self.pyboy.load_state(f)
 
         observation = self.render()
-        self.current_score = self.get_total_score(observation)
+        self.current_score = self.get_total_score(observation[0])
         self.board = observation
         return observation, {}
     
@@ -119,7 +119,7 @@ class TetrisEnv(Env):
             return observation, -100, True, False, {}
         
         # Set reward equal to difference between current and previous score
-        total_score = self.get_total_score(observation)
+        total_score = self.get_total_score(observation[0])
         reward = total_score - self.current_score
         self.current_score = total_score
         self.board = observation
@@ -153,7 +153,7 @@ class TetrisEnv(Env):
         score = self.get_score()
         logging.debug("Score: {}".format(score))
 
-        #board_reward = self.get_board_score(observation)
+        board_reward = self.get_board_score(observation)
         #placement_reward = self.get_placement_score(observation)
         #surface_score = self.get_surface_area(observation) * -1
         #print("Board Reward: {}".format(board_reward))
@@ -162,7 +162,7 @@ class TetrisEnv(Env):
 
         scores = [
             score,
-            #board_reward,
+            board_reward,
             #placement_reward,
             #surface_score,
         ]
@@ -175,7 +175,7 @@ class TetrisEnv(Env):
         score = 0
         height = self.get_max_height(board)
         for i in range(len(board)):
-            diff = np.sum(board[i] - self.board[i])
+            diff = np.sum(board[i] - self.board[0][i])
             score += diff * i
         return score
     
@@ -208,9 +208,9 @@ class TetrisEnv(Env):
             completion *= i / len(board)
             completion_score += completion
 
-        print("Holes: {}".format(hole_score))
-        print("Stack: {}".format(stack_score))
-        print("Completion: {}".format(completion_score))
+        #print("Holes: {}".format(hole_score))
+        #print("Stack: {}".format(stack_score))
+        #print("Completion: {}".format(completion_score))
         return hole_score + stack_score
         #return hole_score + stack_score + completion_score
     
