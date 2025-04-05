@@ -5,6 +5,7 @@ from datetime import datetime
 from ulid import ULID
 from stable_baselines3 import PPO
 from stable_baselines3.common.logger import Logger, make_output_format
+from stable_baselines3.common.utils import get_schedule_fn
 
 from agent import AgentTrainer
 from tensorboard_writer import TensorboardWriter
@@ -27,6 +28,7 @@ def parse_args():
     parser.add_argument("--log-level", type=str, default="ERROR", help="Logging level.")
     parser.add_argument("--load_latest_model", action="store_true", help="Load the most recent model from the models directory to continue training.")
     parser.add_argument("--policy", type=str, choices=["MlpPolicy", "CnnPolicy"], default="MlpPolicy", help="Policy type to use for training (MlpPolicy or CnnPolicy).")
+    parser.add_argument("--learning_rate", type=float, default=3e-4, help="Learning rate for training.")
     return parser.parse_args()
 
 def train(args):
@@ -87,6 +89,9 @@ def train(args):
                 normalize_images=False  # Disable image normalization since your input is already normalized
             )
 
+        # Create a learning rate schedule
+        learning_rate_schedule = get_schedule_fn(args.learning_rate)
+
         model = PPO(
             policy=args.policy,
             env=env,
@@ -95,6 +100,7 @@ def train(args):
             batch_size=args.batch_size,
             n_epochs=args.epochs,
             gamma=args.gamma,
+            learning_rate=learning_rate_schedule,  # Use the learning rate schedule
             policy_kwargs=policy_kwargs if args.policy == "CnnPolicy" else None
         )
 
