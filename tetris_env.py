@@ -211,8 +211,8 @@ class TetrisEnv(Env):
         #print("Holes: {}".format(hole_score))
         #print("Stack: {}".format(stack_score))
         #print("Completion: {}".format(completion_score))
-        return hole_score + stack_score
-        #return hole_score + stack_score + completion_score
+        #return hole_score + stack_score
+        return hole_score + stack_score + completion_score
     
     def get_max_height(self, board):
         return np.max(np.sum(board, axis=0))
