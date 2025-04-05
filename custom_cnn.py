@@ -3,14 +3,16 @@ import torch.nn as nn
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 class CustomCNN(BaseFeaturesExtractor):
-    def __init__(self, observation_space, features_dim=256):
+    def __init__(self, observation_space, features_dim=128):  # Reduced features_dim
         super().__init__(observation_space, features_dim)
-        # Define a CNN with smaller kernel sizes and strides
+        # Define a CNN with downsampling
         self.cnn = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),  # Output: (32, 18, 10)
+            nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1),  # Output: (16, 18, 10)
             nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),  # Output: (64, 18, 10)
+            nn.MaxPool2d(kernel_size=2, stride=2),  # Downsample to (16, 9, 5)
+            nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),  # Output: (32, 9, 5)
             nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),  # Downsample to (32, 4, 2)
             nn.Flatten()  # Flatten the output for the fully connected layer
         )
         # Compute the size of the flattened output
