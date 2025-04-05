@@ -20,6 +20,7 @@ def parse_args():
     parser.add_argument("--render-mode", type=str, choices=["SDL2", "headless"], default="headless",
                         help="Render mode for the environment: 'SDL2' for visual rendering, 'headless' for no rendering.")
     parser.add_argument("--runs", type=int, default=1, help="Number of runs to evaluate the model.")
+    parser.add_argument("--plot", action="store_true", help="Generate plots if this flag is provided.")
     return parser.parse_args()
 
 def eval(args):
@@ -77,9 +78,10 @@ def eval(args):
 
     print(f"Evaluating Tetris for {args.runs} runs. Close the window to exit.")
 
-    # Lists to store steps and scores for each run
+    # Lists to store steps, scores, and cumulative rewards for each run
     steps_list = []
     scores_list = []
+    cumulative_reward_list = []  # New list to store cumulative rewards
 
     # Perform multiple runs
     for run in range(args.runs):
@@ -88,6 +90,7 @@ def eval(args):
         obs, _ = env.reset(seed=seed)
         terminated = False
         steps = 0
+        cumulative_reward = 0  # Initialize cumulative reward for the run
 
         while not terminated:
             # Use the model for action prediction if available, otherwise sample randomly
@@ -98,6 +101,9 @@ def eval(args):
 
             obs, reward, terminated, _, _ = env.step(action)
 
+            # Accumulate the reward
+            cumulative_reward += reward
+
             # Control the speed of the game during visual rendering
             if args.render_mode == "SDL2":
                 time.sleep(1 / args.freq)
@@ -107,9 +113,10 @@ def eval(args):
         # Record the results of the run
         steps_list.append(steps)
         scores_list.append(env.get_score())
+        cumulative_reward_list.append(cumulative_reward)  # Add cumulative reward to the list
 
         # Log the results of the run
-        logging.info(f"Run {run + 1}/{args.runs}: Seed: {seed}, Steps: {steps}, Score: {env.get_score()}")
+        logging.info(f"Run {run + 1}/{args.runs}: Seed: {seed}, Steps: {steps}, Score: {env.get_score()}, Cumulative Reward: {cumulative_reward}")
 
     # Close the environment
     env.close()
@@ -119,108 +126,110 @@ def eval(args):
     logging.info(f"N: {len(steps_list)}")  # Number of runs
     logging.info(f"Steps - Min: {np.min(steps_list)}, Max: {np.max(steps_list)}, Avg: {np.mean(steps_list):.2f}, Std: {np.std(steps_list):.2f}")
     logging.info(f"Score - Min: {np.min(scores_list)}, Max: {np.max(scores_list)}, Avg: {np.mean(scores_list):.2f}, Std: {np.std(scores_list):.2f}")
+    logging.info(f"Cumulative Reward - Min: {np.min(cumulative_reward_list)}, Max: {np.max(cumulative_reward_list)}, Avg: {np.mean(cumulative_reward_list):.2f}, Std: {np.std(cumulative_reward_list):.2f}")
 
-    # Create directories for plots if they don't exist
-    histogram_dir = os.path.join("plots", "histograms")
-    os.makedirs(histogram_dir, exist_ok=True)
+    if args.plot:
+        # Create directories for plots if they don't exist
+        histogram_dir = os.path.join("plots", "histograms")
+        os.makedirs(histogram_dir, exist_ok=True)
 
-    # Generate a timestamp for the filenames (evaluation completion time)
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        # Generate a timestamp for the filenames (evaluation completion time)
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
-    # Determine the policy name from the model path or use "Random"
-    if args.model:
-        # Extract the policy name from the model path (e.g., "CnnPolicy" or "MlpPolicy")
-        policy_name = os.path.basename(os.path.dirname(args.model))
-        # Extract timesteps from the model filename (e.g., "4096" from "20250404-222051_4096.zip")
-        timesteps = os.path.basename(args.model).split("_")[-1].replace(".zip", "")
-    else:
-        policy_name = "Random"
-        timesteps = "NA"  # Not applicable for random gameplay
+        # Determine the policy name from the model path or use "Random"
+        if args.model:
+            # Extract the policy name from the model path (e.g., "CnnPolicy" or "MlpPolicy")
+            policy_name = os.path.basename(os.path.dirname(args.model))
+            # Extract timesteps from the model filename (e.g., "4096" from "20250404-222051_4096.zip")
+            timesteps = os.path.basename(args.model).split("_")[-1].replace(".zip", "")
+        else:
+            policy_name = "Random"
+            timesteps = "NA"  # Not applicable for random gameplay
 
-    # Clean up the policy name for filenames
-    policy_name_clean = policy_name.replace("/", "_").replace("\\", "_")
+        # Clean up the policy name for filenames
+        policy_name_clean = policy_name.replace("/", "_").replace("\\", "_")
 
-    # Plot and save the histogram of steps
-    plt.figure()
-    plt.hist(steps_list, bins=10, color='blue', edgecolor='black', alpha=0.7)
-    plt.title(f"Histogram of Steps ({policy_name})")
-    plt.xlabel("Steps")
-    plt.ylabel("Frequency")
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    steps_histogram_path = os.path.join(histogram_dir, f"steps_histogram_{policy_name_clean}_{timesteps}_{timestamp}.png")
-    plt.savefig(steps_histogram_path)
-    plt.close()
-    logging.info(f"Histogram of steps saved to {steps_histogram_path}")
+        # Plot and save the histogram of steps
+        plt.figure()
+        plt.hist(steps_list, bins=10, color='blue', edgecolor='black', alpha=0.7)
+        plt.title(f"Histogram of Steps ({policy_name})")
+        plt.xlabel("Steps")
+        plt.ylabel("Frequency")
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        steps_histogram_path = os.path.join(histogram_dir, f"steps_histogram_{policy_name_clean}_{timesteps}_{timestamp}.png")
+        plt.savefig(steps_histogram_path)
+        plt.close()
+        logging.info(f"Histogram of steps saved to {steps_histogram_path}")
 
-    # Plot and save the histogram of scores
-    plt.figure()
-    plt.hist(scores_list, bins=10, color='green', edgecolor='black', alpha=0.7)
-    plt.title(f"Histogram of Scores ({policy_name})")
-    plt.xlabel("Scores")
-    plt.ylabel("Frequency")
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    score_histogram_path = os.path.join(histogram_dir, f"scores_histogram_{policy_name_clean}_{timesteps}_{timestamp}.png")
-    plt.savefig(score_histogram_path)
-    plt.close()
-    logging.info(f"Histogram of scores saved to {score_histogram_path}")
+        # Plot and save the histogram of scores
+        plt.figure()
+        plt.hist(scores_list, bins=10, color='green', edgecolor='black', alpha=0.7)
+        plt.title(f"Histogram of Scores ({policy_name})")
+        plt.xlabel("Scores")
+        plt.ylabel("Frequency")
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        score_histogram_path = os.path.join(histogram_dir, f"scores_histogram_{policy_name_clean}_{timesteps}_{timestamp}.png")
+        plt.savefig(score_histogram_path)
+        plt.close()
+        logging.info(f"Histogram of scores saved to {score_histogram_path}")
 
-    # Plot and save the line plot of steps
-    plt.figure()
-    plt.plot(range(1, len(steps_list) + 1), steps_list, marker='o', color='blue', linestyle='-', linewidth=2)
-    plt.title(f"Steps per Run ({policy_name})")
-    plt.xlabel("Run Number")
-    plt.ylabel("Steps")
-    plt.grid(axis='both', linestyle='--', alpha=0.7)
-    steps_line_plot_path = os.path.join(histogram_dir, f"steps_lineplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
-    plt.savefig(steps_line_plot_path)
-    plt.close()
-    logging.info(f"Line plot of steps saved to {steps_line_plot_path}")
+        # Plot and save the line plot of steps
+        plt.figure()
+        plt.plot(range(1, len(steps_list) + 1), steps_list, marker='o', color='blue', linestyle='-', linewidth=2)
+        plt.title(f"Steps per Run ({policy_name})")
+        plt.xlabel("Run Number")
+        plt.ylabel("Steps")
+        plt.grid(axis='both', linestyle='--', alpha=0.7)
+        steps_line_plot_path = os.path.join(histogram_dir, f"steps_lineplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
+        plt.savefig(steps_line_plot_path)
+        plt.close()
+        logging.info(f"Line plot of steps saved to {steps_line_plot_path}")
 
-    # Plot and save the line plot of scores
-    plt.figure()
-    plt.plot(range(1, len(scores_list) + 1), scores_list, marker='o', color='green', linestyle='-', linewidth=2)
-    plt.title(f"Scores per Run ({policy_name})")
-    plt.xlabel("Run Number")
-    plt.ylabel("Score")
-    plt.grid(axis='both', linestyle='--', alpha=0.7)
-    score_line_plot_path = os.path.join(histogram_dir, f"scores_lineplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
-    plt.savefig(score_line_plot_path)
-    plt.close()
-    logging.info(f"Line plot of scores saved to {score_line_plot_path}")
+        # Plot and save the line plot of scores
+        plt.figure()
+        plt.plot(range(1, len(scores_list) + 1), scores_list, marker='o', color='green', linestyle='-', linewidth=2)
+        plt.title(f"Scores per Run ({policy_name})")
+        plt.xlabel("Run Number")
+        plt.ylabel("Score")
+        plt.grid(axis='both', linestyle='--', alpha=0.7)
+        score_line_plot_path = os.path.join(histogram_dir, f"scores_lineplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
+        plt.savefig(score_line_plot_path)
+        plt.close()
+        logging.info(f"Line plot of scores saved to {score_line_plot_path}")
 
-    # Plot and save the boxplot of steps
-    plt.figure()
-    plt.boxplot(steps_list, vert=True, patch_artist=True, boxprops=dict(facecolor='blue', color='black'), medianprops=dict(color='red'))
-    plt.title(f"Boxplot of Steps ({policy_name})")
-    plt.ylabel("Steps")
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    steps_boxplot_path = os.path.join(histogram_dir, f"steps_boxplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
-    plt.savefig(steps_boxplot_path)
-    plt.close()
-    logging.info(f"Boxplot of steps saved to {steps_boxplot_path}")
+        # Plot and save the boxplot of steps
+        plt.figure()
+        plt.boxplot(steps_list, vert=True, patch_artist=True, boxprops=dict(facecolor='blue', color='black'), medianprops=dict(color='red'))
+        plt.title(f"Boxplot of Steps ({policy_name})")
+        plt.ylabel("Steps")
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        steps_boxplot_path = os.path.join(histogram_dir, f"steps_boxplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
+        plt.savefig(steps_boxplot_path)
+        plt.close()
+        logging.info(f"Boxplot of steps saved to {steps_boxplot_path}")
 
-    # Plot and save the boxplot of scores
-    plt.figure()
-    plt.boxplot(scores_list, vert=True, patch_artist=True, boxprops=dict(facecolor='green', color='black'), medianprops=dict(color='red'))
-    plt.title(f"Boxplot of Scores ({policy_name})")
-    plt.ylabel("Scores")
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    scores_boxplot_path = os.path.join(histogram_dir, f"scores_boxplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
-    plt.savefig(scores_boxplot_path)
-    plt.close()
-    logging.info(f"Boxplot of scores saved to {scores_boxplot_path}")
+        # Plot and save the boxplot of scores
+        plt.figure()
+        plt.boxplot(scores_list, vert=True, patch_artist=True, boxprops=dict(facecolor='green', color='black'), medianprops=dict(color='red'))
+        plt.title(f"Boxplot of Scores ({policy_name})")
+        plt.ylabel("Scores")
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        scores_boxplot_path = os.path.join(histogram_dir, f"scores_boxplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
+        plt.savefig(scores_boxplot_path)
+        plt.close()
+        logging.info(f"Boxplot of scores saved to {scores_boxplot_path}")
 
-    # Plot and save the scatterplot of steps vs. scores
-    plt.figure()
-    plt.scatter(steps_list, scores_list, color='purple', alpha=0.7, edgecolor='black')
-    plt.title(f"Scatterplot of Steps vs. Scores ({policy_name})")
-    plt.xlabel("Steps")
-    plt.ylabel("Scores")
-    plt.grid(axis='both', linestyle='--', alpha=0.7)
-    scatter_plot_path = os.path.join(histogram_dir, f"scatterplot_steps_vs_scores_{policy_name_clean}_{timesteps}_{timestamp}.png")
-    plt.savefig(scatter_plot_path)
-    plt.close()
-    logging.info(f"Scatterplot of steps vs. scores saved to {scatter_plot_path}")
+        # Plot and save the scatterplot of steps vs. scores
+        plt.figure()
+        plt.scatter(steps_list, scores_list, color='purple', alpha=0.7, edgecolor='black')
+        plt.title(f"Scatterplot of Steps vs. Scores ({policy_name})")
+        plt.xlabel("Steps")
+        plt.ylabel("Scores")
+        plt.grid(axis='both', linestyle='--', alpha=0.7)
+        scatter_plot_path = os.path.join(histogram_dir, f"scatterplot_steps_vs_scores_{policy_name_clean}_{timesteps}_{timestamp}.png")
+        plt.savefig(scatter_plot_path)
+        plt.close()
+        logging.info(f"Scatterplot of steps vs. scores saved to {scatter_plot_path}")
 
 if __name__ == "__main__":
     eval(parse_args())
