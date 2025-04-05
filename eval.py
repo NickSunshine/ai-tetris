@@ -13,7 +13,7 @@ def parse_args():
     parser.add_argument("--log-level", type=str, default="ERROR", help="Logging level.")
     parser.add_argument("--model", type=str, default=None, help="Path to the model file to load.")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for the environment.")
-    parser.add_argument("--render-mode", type=str, choices=["SDL2", "headless"], default="SDL2",
+    parser.add_argument("--render-mode", type=str, choices=["SDL2", "headless"], default="headless",
                         help="Render mode for the environment: 'SDL2' for visual rendering, 'headless' for no rendering.")
     parser.add_argument("--runs", type=int, default=1, help="Number of runs to evaluate the model.")
     return parser.parse_args()
@@ -42,7 +42,6 @@ def eval(args):
     for run in range(args.runs):
         # Set a random seed for each run
         seed = args.seed if args.seed is not None else np.random.randint(0, 100000)
-        print(f"Run {run + 1}/{args.runs}: Using seed {seed}")
         obs, _ = env.reset(seed=seed)
         terminated = False
         steps = 0
