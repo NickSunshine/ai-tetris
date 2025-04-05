@@ -178,3 +178,6 @@ sessions/
 
 # Training Metrics
 training_metrics.json
+
+# Plots
+*.png
