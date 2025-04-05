@@ -110,10 +110,10 @@ def eval(args):
     plt.xlabel("Steps")
     plt.ylabel("Frequency")
     plt.grid(axis='y', linestyle='--', alpha=0.7)
-    histogram_path = os.path.join(histogram_dir, f"steps_histogram_{policy_name_clean}_{timesteps}_{timestamp}.png")
-    plt.savefig(histogram_path)
+    steps_histogram_path = os.path.join(histogram_dir, f"steps_histogram_{policy_name_clean}_{timesteps}_{timestamp}.png")
+    plt.savefig(steps_histogram_path)
     plt.close()
-    print(f"Histogram of steps saved to {histogram_path}")
+    print(f"Histogram of steps saved to {steps_histogram_path}")
 
     # Plot and save the histogram of scores
     plt.figure()
@@ -126,6 +126,30 @@ def eval(args):
     plt.savefig(score_histogram_path)
     plt.close()
     print(f"Histogram of scores saved to {score_histogram_path}")
+
+    # Plot and save the line plot of steps
+    plt.figure()
+    plt.plot(range(1, len(steps_list) + 1), steps_list, marker='o', color='blue', linestyle='-', linewidth=2)
+    plt.title(f"Steps per Run ({policy_name})")
+    plt.xlabel("Run Number")
+    plt.ylabel("Steps")
+    plt.grid(axis='both', linestyle='--', alpha=0.7)
+    steps_line_plot_path = os.path.join(histogram_dir, f"steps_lineplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
+    plt.savefig(steps_line_plot_path)
+    plt.close()
+    print(f"Line plot of steps saved to {steps_line_plot_path}")
+
+    # Plot and save the line plot of scores
+    plt.figure()
+    plt.plot(range(1, len(scores_list) + 1), scores_list, marker='o', color='green', linestyle='-', linewidth=2)
+    plt.title(f"Scores per Run ({policy_name})")
+    plt.xlabel("Run Number")
+    plt.ylabel("Score")
+    plt.grid(axis='both', linestyle='--', alpha=0.7)
+    score_line_plot_path = os.path.join(histogram_dir, f"scores_lineplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
+    plt.savefig(score_line_plot_path)
+    plt.close()
+    print(f"Line plot of scores saved to {score_line_plot_path}")
 
 if __name__ == "__main__":
     eval(parse_args())
