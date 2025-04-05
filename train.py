@@ -28,12 +28,15 @@ def parse_args():
     parser.add_argument("--log-stdout", type=bool, default=True, help="Log session events to stdout.")
     parser.add_argument("--log-level", type=str, default="ERROR", help="Logging level.")
     parser.add_argument("--load_latest_model", action="store_true", help="Load the most recent model from the models directory to continue training.")
+    parser.add_argument("--policy", type=str, choices=["MlpPolicy", "CnnPolicy"], default="MlpPolicy", help="Policy type to use for training (MlpPolicy or CnnPolicy).")
     return parser.parse_args()
 
 def train(args):
-    # Ensure directories exist for saving models and logging
-    model_dir = "models-ppo-mlp"
+    # Set the model directory based on the policy
+    model_dir = os.path.join("models", args.policy)
     os.makedirs(model_dir, exist_ok=True)
+
+    # Ensure directories exist for logging
     log_dir = os.path.join("logs", "tensorboard")
     os.makedirs(log_dir, exist_ok=True)
 
@@ -49,7 +52,6 @@ def train(args):
         init_state=args.init,
         log_level=args.log_level,
         window="headless"
-        
     )
 
     # Load metrics and the latest model if requested
@@ -75,26 +77,27 @@ def train(args):
     # If no model was loaded, create a new one
     if model is None:
         print("Training a new model from scratch...")
-        #policy_kwargs = dict(
-            #features_extractor_class=CustomCNN,
-            #features_extractor_kwargs=dict(features_dim=256),
-            #normalize_images=False  # Disable image normalization since your input is already normalized
-        #)
-        policy = "MlpPolicy"
+        policy_kwargs = None
+
+        if args.policy == "CnnPolicy":
+            policy_kwargs = dict(
+                features_extractor_class=CustomCNN,
+                features_extractor_kwargs=dict(features_dim=256),
+                normalize_images=False  # Disable image normalization since your input is already normalized
+            )
+
         model = PPO(
-            #"CnnPolicy",  # Use CnnPolicy to leverage the CustomCNN features extractor
-            #"MlpPolicy",  # Fallback to MlpPolicy if CnnPolicy is not suitable for your environment
-            policy,
-            env,
+            policy=args.policy,
+            env=env,
             verbose=1,
             n_steps=args.steps,
             batch_size=args.batch_size,
             n_epochs=args.epochs,
             gamma=args.gamma,
-            #policy_kwargs=policy_kwargs
+            policy_kwargs=policy_kwargs if args.policy == "CnnPolicy" else None
         )
     #print(f"Model details: {model.policy}")
-    
+
     # Set logging outputs
     output_formats = []
     if args.log_stdout:
