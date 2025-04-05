@@ -86,11 +86,8 @@ def train(args):
             policy_kwargs = dict(
                 features_extractor_class=CustomCNN,
                 features_extractor_kwargs=dict(features_dim=256),
-                normalize_images=False  # Disable image normalization since your input is already normalized
+                normalize_images=False
             )
-
-        # Create a learning rate schedule
-        learning_rate_schedule = get_schedule_fn(args.learning_rate)
 
         model = PPO(
             policy=args.policy,
@@ -100,7 +97,7 @@ def train(args):
             batch_size=args.batch_size,
             n_epochs=args.epochs,
             gamma=args.gamma,
-            learning_rate=learning_rate_schedule,  # Use the learning rate schedule
+            learning_rate=args.learning_rate,
             policy_kwargs=policy_kwargs if args.policy == "CnnPolicy" else None
         )
 
