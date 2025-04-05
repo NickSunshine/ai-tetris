@@ -151,5 +151,27 @@ def eval(args):
     plt.close()
     print(f"Line plot of scores saved to {score_line_plot_path}")
 
+    # Plot and save the boxplot of steps
+    plt.figure()
+    plt.boxplot(steps_list, vert=True, patch_artist=True, boxprops=dict(facecolor='blue', color='black'), medianprops=dict(color='red'))
+    plt.title(f"Boxplot of Steps ({policy_name})")
+    plt.ylabel("Steps")
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    steps_boxplot_path = os.path.join(histogram_dir, f"steps_boxplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
+    plt.savefig(steps_boxplot_path)
+    plt.close()
+    print(f"Boxplot of steps saved to {steps_boxplot_path}")
+
+    # Plot and save the boxplot of scores
+    plt.figure()
+    plt.boxplot(scores_list, vert=True, patch_artist=True, boxprops=dict(facecolor='green', color='black'), medianprops=dict(color='red'))
+    plt.title(f"Boxplot of Scores ({policy_name})")
+    plt.ylabel("Scores")
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    scores_boxplot_path = os.path.join(histogram_dir, f"scores_boxplot_{policy_name_clean}_{timesteps}_{timestamp}.png")
+    plt.savefig(scores_boxplot_path)
+    plt.close()
+    print(f"Boxplot of scores saved to {scores_boxplot_path}")
+
 if __name__ == "__main__":
     eval(parse_args())
