@@ -173,5 +173,17 @@ def eval(args):
     plt.close()
     print(f"Boxplot of scores saved to {scores_boxplot_path}")
 
+    # Plot and save the scatterplot of steps vs. scores
+    plt.figure()
+    plt.scatter(steps_list, scores_list, color='purple', alpha=0.7, edgecolor='black')
+    plt.title(f"Scatterplot of Steps vs. Scores ({policy_name})")
+    plt.xlabel("Steps")
+    plt.ylabel("Scores")
+    plt.grid(axis='both', linestyle='--', alpha=0.7)
+    scatter_plot_path = os.path.join(histogram_dir, f"scatterplot_steps_vs_scores_{policy_name_clean}_{timesteps}_{timestamp}.png")
+    plt.savefig(scatter_plot_path)
+    plt.close()
+    print(f"Scatterplot of steps vs. scores saved to {scatter_plot_path}")
+
 if __name__ == "__main__":
     eval(parse_args())
