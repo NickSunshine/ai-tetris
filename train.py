@@ -1,7 +1,6 @@
 import argparse
 import os
 import json
-import glob
 from datetime import datetime
 from ulid import ULID
 from stable_baselines3 import PPO
@@ -22,9 +21,8 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=64, help="Batch size for training.")
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training.")
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor for training.")
-    parser.add_argument("--steps", type=int, default=2048, help="Number of steps for the model to learn.")
-    parser.add_argument("--sessions", type=int, default=40, help="Number of training sessions.")
-    parser.add_argument("--runs", type=int, default=4, help="Number of runs per session.")
+    parser.add_argument("--steps", type=int, default=2048, help="Number of steps per run.")
+    parser.add_argument("--runs", type=int, default=1000, help="Number of runs for training.")
     parser.add_argument("--log-stdout", type=bool, default=True, help="Log session events to stdout.")
     parser.add_argument("--log-level", type=str, default="ERROR", help="Logging level.")
     parser.add_argument("--load_latest_model", action="store_true", help="Load the most recent model from the models directory to continue training.")
@@ -37,7 +35,8 @@ def train(args):
     os.makedirs(model_dir, exist_ok=True)
 
     # Ensure directories exist for logging
-    log_dir = os.path.join("logs", "tensorboard")
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = os.path.join("logs", "tensorboard", f"{args.policy}", f"{timestamp}")
     os.makedirs(log_dir, exist_ok=True)
 
     # Create the writer
@@ -58,6 +57,7 @@ def train(args):
     metrics_file = os.path.join(model_dir, "training_metrics.json")
     model = None
     total_timesteps = 0
+    total_duration = 0
 
     if args.load_latest_model:
         # Load metrics
@@ -65,6 +65,7 @@ def train(args):
             with open(metrics_file, "r") as f:
                 metrics = json.load(f)
                 total_timesteps = metrics.get("total_timesteps", 0)
+                total_duration = metrics.get("total_duration", 0)
                 latest_model_path = metrics.get("last_saved_model")
                 if latest_model_path and os.path.exists(latest_model_path):
                     print(f"Loading the latest model: {latest_model_path}")
@@ -96,38 +97,17 @@ def train(args):
             gamma=args.gamma,
             policy_kwargs=policy_kwargs if args.policy == "CnnPolicy" else None
         )
-    #print(f"Model details: {model.policy}")
 
     # Set logging outputs
     output_formats = []
     if args.log_stdout:
-        output_formats.append(make_output_format("stdout", "sessions"))
+        output_formats.append(make_output_format("stdout", "runs"))
     output_formats.append(writer)
     model.set_logger(Logger(None, output_formats=output_formats))
 
     # Train the model
     trainer = AgentTrainer(writer=writer, model_dir=model_dir, agent_id=agent_id)
-    trainer.train(model, sessions=args.sessions, runs_per_session=args.runs, total_timesteps=total_timesteps)
-
-    # Update total timesteps after training
-    total_timesteps += args.sessions * args.runs * args.steps    
-
-    # Save the model locally
-    timestamp = datetime.now()
-    model_name = model.__class__.__name__
-    model_path = os.path.join(
-        model_dir,
-        "{}_{}.zip".format(timestamp.strftime("%Y%m%d-%H%M%S"), total_timesteps)
-    )
-    model.save(model_path)
-
-    # Update metrics
-    metrics = {
-        "total_timesteps": total_timesteps,
-        "last_saved_model": model_path
-    }
-    with open(metrics_file, "w") as f:
-        json.dump(metrics, f)
+    trainer.train(model, runs=args.runs, total_timesteps=total_timesteps, total_duration=total_duration)
 
     # Close the writer
     writer.close()
