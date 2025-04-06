@@ -117,7 +117,8 @@ class TetrisEnv(Env):
         if observation[0][0].sum() >= len(observation[0][0]):
             # Game over
             ##return observation, -100, True, False, {}
-            return observation, -10, True, False, {}
+            #return observation, -10, True, False, {}
+            return observation, 0, True, False, {}
         
         # Set reward equal to difference between current and previous score
         total_score = self.get_total_score(observation[0])
@@ -212,8 +213,8 @@ class TetrisEnv(Env):
         #print("Holes: {}".format(hole_score))
         #print("Stack: {}".format(stack_score))
         #print("Completion: {}".format(completion_score))
-        #return hole_score + stack_score
-        return hole_score + stack_score + completion_score
+        return hole_score + stack_score
+        #return hole_score + stack_score + completion_score
     
     def get_max_height(self, board):
         return np.max(np.sum(board, axis=0))
