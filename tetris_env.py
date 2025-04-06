@@ -116,7 +116,8 @@ class TetrisEnv(Env):
         observation = self.render()
         if observation[0][0].sum() >= len(observation[0][0]):
             # Game over
-            return observation, -100, True, False, {}
+            ##return observation, -100, True, False, {}
+            return observation, -10, True, False, {}
         
         # Set reward equal to difference between current and previous score
         total_score = self.get_total_score(observation[0])
