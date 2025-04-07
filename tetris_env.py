@@ -117,8 +117,8 @@ class TetrisEnv(Env):
         if observation[0][0].sum() >= len(observation[0][0]):
             # Game over
             ##return observation, -100, True, False, {}
-            #return observation, -10, True, False, {}
-            return observation, 0, True, False, {}
+            return observation, -10, True, False, {}
+            #return observation, 0, True, False, {}
         
         # Set reward equal to difference between current and previous score
         total_score = self.get_total_score(observation[0])
@@ -155,7 +155,7 @@ class TetrisEnv(Env):
         score = self.get_score()
         logging.debug("Score: {}".format(score))
 
-        #board_reward = self.get_board_score(observation)
+        board_reward = self.get_board_score(observation)
         #placement_reward = self.get_placement_score(observation)
         #surface_score = self.get_surface_area(observation) * -1
         #print("Board Reward: {}".format(board_reward))
@@ -164,7 +164,7 @@ class TetrisEnv(Env):
 
         scores = [
             score,
-            #board_reward,
+            board_reward,
             #placement_reward,
             #surface_score,
         ]
@@ -223,11 +223,11 @@ class TetrisEnv(Env):
     #     return np.max(np.sum(board, axis=0))
     
     def get_max_height(self, board):
-        # Find the highest row index with at least one block
-        rows_with_blocks = np.any(board, axis=1)  # Boolean array: True for rows with blocks
-        if np.any(rows_with_blocks):  # Check if any row contains blocks
-            return len(board) - np.argmax(rows_with_blocks)  # Convert row index to height
-        return 0  # If no blocks are found, the height is 0
+        # Ignore the top row(s) when calculating height
+        rows_with_blocks = np.any(board[1:], axis=1)  # Skip the first row
+        if np.any(rows_with_blocks):
+            return len(board) - np.argmax(rows_with_blocks) - 1  # Adjust for skipped row
+        return 0
     
     def get_max_width(self, board):
         return np.max(np.sum(board, axis=1))
