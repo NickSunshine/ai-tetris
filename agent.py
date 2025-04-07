@@ -17,6 +17,9 @@ class AgentTrainer:
         # Generate a single timestamp at the beginning of training
         training_start_timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
+        # Calculate the interval for saving every 10% of runs
+        save_interval = max(1, runs // 10)  # Ensure at least one save if runs < 10
+
         for run in range(1, runs + 1):
             # Start timing the run
             start_time = datetime.now()
@@ -27,12 +30,14 @@ class AgentTrainer:
             # Update total timesteps
             total_timesteps += model.n_steps
 
-            # Save the model after every run
-            model_path = os.path.join(
-                self.model_dir,
-                f"{training_start_timestamp}_{total_timesteps}.zip"
-            )
-            model.save(model_path)
+            # Save the model based on the conditions
+            if run == 1 or run == runs or run % save_interval == 0:
+                model_path = os.path.join(
+                    self.model_dir,
+                    f"{training_start_timestamp}_{total_timesteps}.zip"
+                )
+                model.save(model_path)
+                print(f"Model saved to {model_path} after run {run}.")
 
             # Calculate run duration
             run_duration = (datetime.now() - start_time).total_seconds()
@@ -41,7 +46,7 @@ class AgentTrainer:
             total_duration += run_duration
 
             # Log progress with detailed run duration
-            print(f"Run {run}/{runs} completed. Model saved to {model_path}")
+            print(f"Run {run}/{runs} completed.")
             print(f"Run timesteps: {model.n_steps}. Total timesteps: {total_timesteps}. Run duration: {run_duration:.2f} s. Total duration: {total_duration:.2f} s.")
 
             # Write metrics to TensorBoard
