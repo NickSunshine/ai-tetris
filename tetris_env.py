@@ -117,8 +117,8 @@ class TetrisEnv(Env):
         if observation[0][0].sum() >= len(observation[0][0]):
             # Game over
             ##return observation, -100, True, False, {}
-            return observation, -10, True, False, {}
-            #return observation, 0, True, False, {}
+            #return observation, -10, True, False, {}
+            return observation, 0, True, False, {}
         
         # Set reward equal to difference between current and previous score
         total_score = self.get_total_score(observation[0])
@@ -157,7 +157,7 @@ class TetrisEnv(Env):
 
         #board_reward = self.get_board_score(observation)
         #placement_reward = self.get_placement_score(observation)
-        surface_score = self.get_surface_area(observation) * -1
+        #surface_score = self.get_surface_area(observation) * -1
         #print("Board Reward: {}".format(board_reward))
         #print("Placement Reward: {}".format(placement_reward))
         #print("Surface Score: {}".format(surface_score))
@@ -166,7 +166,7 @@ class TetrisEnv(Env):
             score,
             #board_reward,
             #placement_reward,
-            surface_score,
+            #surface_score,
         ]
         return np.sum(scores)
 
