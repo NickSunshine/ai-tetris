@@ -155,18 +155,18 @@ class TetrisEnv(Env):
         score = self.get_score()
         logging.debug("Score: {}".format(score))
 
-        board_reward = self.get_board_score(observation)
+        #board_reward = self.get_board_score(observation)
         #placement_reward = self.get_placement_score(observation)
-        #surface_score = self.get_surface_area(observation) * -1
+        surface_score = self.get_surface_area(observation) * -1
         #print("Board Reward: {}".format(board_reward))
         #print("Placement Reward: {}".format(placement_reward))
         #print("Surface Score: {}".format(surface_score))
 
         scores = [
             score,
-            board_reward,
+            #board_reward,
             #placement_reward,
-            #surface_score,
+            surface_score,
         ]
         return np.sum(scores)
 
