@@ -128,7 +128,7 @@ class TetrisEnv(Env):
         
         # Set reward equal to difference between current and previous score
         total_score = self.get_total_score(observation[0])
-        reward = (total_score - self.current_score) + 0.001 # Small positive reward to encourage the agent to play
+        reward = max((total_score - self.current_score), 0) + 0.001  # Ignore negative values and add 0.001
         self.current_score = total_score
         self.board = observation
 
