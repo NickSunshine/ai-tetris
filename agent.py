@@ -20,6 +20,9 @@ class AgentTrainer:
         # Calculate the interval for saving every 10% of runs
         save_interval = max(1, runs // 10)  # Ensure at least one save if runs < 10
 
+        # Get the number of parallel environments
+        n_envs = model.get_env().num_envs if model.get_env() else 1  # Default to 1 if no parallel environments
+
         for run in range(1, runs + 1):
             # Start timing the run
             start_time = datetime.now()
@@ -27,8 +30,8 @@ class AgentTrainer:
             # Train the model for the specified number of steps
             model.learn(total_timesteps=model.n_steps, reset_num_timesteps=False)
 
-            # Update total timesteps
-            total_timesteps += model.n_steps
+            # Update total timesteps (account for parallel environments)
+            total_timesteps += model.n_steps * n_envs
 
             # Save the model based on the conditions
             if run == 1 or run == runs or run % save_interval == 0:
@@ -47,7 +50,7 @@ class AgentTrainer:
 
             # Log progress with detailed run duration
             print(f"Run {run}/{runs} completed.")
-            print(f"Run timesteps: {model.n_steps}. Total timesteps: {total_timesteps}. Run duration: {run_duration:.2f} s. Total duration: {total_duration:.2f} s.")
+            print(f"Run timesteps: {model.n_steps * n_envs}. Total timesteps: {total_timesteps}. Run duration: {run_duration:.2f} s. Total duration: {total_duration:.2f} s.")
 
             # Write metrics to TensorBoard
             self.writer.write(
@@ -58,7 +61,7 @@ class AgentTrainer:
                     "custom/run_duration": run_duration
                 },
                 key_excluded=[],
-                step=run * model.n_steps  # Use the current training's elapsed steps as the X-axis value
+                step=total_timesteps  # Use the actual total timesteps as the X-axis value
             )
 
         # Save metrics (excluding overall_total_duration)
