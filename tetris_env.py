@@ -123,11 +123,12 @@ class TetrisEnv(Env):
             # Game over
             ##return observation, -100, True, False, {}
             #return observation, -10, True, False, {}
-            return observation, 0, True, False, {}
+            #return observation, 0, True, False, {}
+            return observation, -2, True, False, {}
         
         # Set reward equal to difference between current and previous score
         total_score = self.get_total_score(observation[0])
-        reward = total_score - self.current_score
+        reward = (total_score - self.current_score) + 0.001 # Small positive reward to encourage the agent to play
         self.current_score = total_score
         self.board = observation
 
@@ -160,7 +161,7 @@ class TetrisEnv(Env):
         score = self.get_score()
         logging.debug("Score: {}".format(score))
 
-        #board_reward = self.get_board_score(observation)
+        board_reward = self.get_board_score(observation)
         #placement_reward = self.get_placement_score(observation)
         #surface_score = self.get_surface_area(observation) * -1
         #print("Board Reward: {}".format(board_reward))
@@ -168,8 +169,8 @@ class TetrisEnv(Env):
         #print("Surface Score: {}".format(surface_score))
 
         scores = [
-            score,
-            #board_reward,
+            #score,
+            board_reward,
             #placement_reward,
             #surface_score,
         ]
