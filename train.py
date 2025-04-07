@@ -5,8 +5,8 @@ from datetime import datetime
 from ulid import ULID
 from stable_baselines3 import PPO
 from stable_baselines3.common.logger import Logger, make_output_format
-from stable_baselines3.common.utils import get_schedule_fn
-
+from stable_baselines3.common.vec_env import SubprocVecEnv
+from stable_baselines3.common.env_util import make_vec_env
 from agent import AgentTrainer
 from tensorboard_writer import TensorboardWriter
 from tetris_env import TetrisEnv
@@ -29,6 +29,8 @@ def parse_args():
     parser.add_argument("--load_latest_model", action="store_true", help="Load the most recent model from the models directory to continue training.")
     parser.add_argument("--policy", type=str, choices=["MlpPolicy", "CnnPolicy"], default="MlpPolicy", help="Policy type to use for training (MlpPolicy or CnnPolicy).")
     parser.add_argument("--learning_rate", type=float, default=3e-4, help="Learning rate for training.")
+    parser.add_argument("--force-cpu", action="store_true", help="Force the model to use the CPU, even if a GPU is available.")  # New argument
+    parser.add_argument("--n_envs", type=int, default=4, help="Number of parallel environments for training.")  # Add this to parse_args()
     return parser.parse_args()
 
 def train(args):
@@ -46,14 +48,43 @@ def train(args):
 
     # Configure the environment
     agent_id = ULID()
-    env = TetrisEnv(
-        gb_path=args.rom,
-        action_freq=args.freq,
-        speedup=args.speedup,
-        init_state=args.init,
-        log_level=args.log_level,
-        window="headless"
-    )
+
+    # Use parallel environments for MlpPolicy, single environment for CnnPolicy
+    if args.policy == "MlpPolicy":
+        # Calculate total steps per update
+        total_steps_per_update = args.steps * args.n_envs
+        print(f"Total steps per update: {total_steps_per_update}")
+
+        # Validate batch_size
+        if total_steps_per_update % args.batch_size != 0:
+            raise ValueError(f"batch_size ({args.batch_size}) must be a divisor of total steps per update ({total_steps_per_update}).")
+
+        # Use make_vec_env with a callable function to create custom environments
+        env = make_vec_env(
+            env_id=lambda: TetrisEnv(
+                gb_path=args.rom,
+                action_freq=args.freq,
+                speedup=args.speedup,
+                init_state=args.init,
+                log_level=args.log_level,
+                window="headless"
+            ),
+            n_envs=args.n_envs,  # Use the value from the command-line argument
+            vec_env_cls=SubprocVecEnv,
+            seed=42
+        )
+    else:  # For CnnPolicy
+        env = TetrisEnv(
+            gb_path=args.rom,
+            action_freq=args.freq,
+            speedup=args.speedup,
+            init_state=args.init,
+            log_level=args.log_level,
+            window="headless"
+        )
+
+    # Set the device (CPU or GPU)
+    device = "cpu" if args.force_cpu else "auto"  # Use "cpu" if --force-cpu is set, otherwise "auto"
 
     # Load metrics and the latest model if requested
     metrics_file = os.path.join(model_dir, "training_metrics.json")
@@ -71,7 +102,7 @@ def train(args):
                 latest_model_path = metrics.get("last_saved_model")
                 if latest_model_path and os.path.exists(latest_model_path):
                     print(f"Loading the latest model: {latest_model_path}")
-                    model = PPO.load(latest_model_path, env=env)
+                    model = PPO.load(latest_model_path, env=env, device=device)  # Pass the device here
                 else:
                     print("No valid model found in metrics. Training a new model from scratch.")
         else:
@@ -98,7 +129,8 @@ def train(args):
             n_epochs=args.epochs,
             gamma=args.gamma,
             learning_rate=args.learning_rate,
-            policy_kwargs=policy_kwargs if args.policy == "CnnPolicy" else None
+            policy_kwargs=policy_kwargs if args.policy == "CnnPolicy" else None,
+            device=device  # Pass the device here
         )
 
     # Set logging outputs
@@ -114,6 +146,9 @@ def train(args):
 
     # Close the writer
     writer.close()
+
+    # Close the environment
+    env.close()
 
 if __name__ == "__main__":
     train(parse_args())

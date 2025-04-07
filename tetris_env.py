@@ -97,6 +97,11 @@ class TetrisEnv(Env):
 
         self.pyboy.set_emulation_speed(0 if self.window == "headless" else self.speedup)
         self.reset()
+        self.seed_value = None
+
+    def seed(self, seed=None):
+        self.seed_value = seed
+        np.random.seed(seed)
 
     def reset(self, seed=None):
         self.seed = seed
