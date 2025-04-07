@@ -55,8 +55,8 @@ class TetrisEnv(Env):
         self.valid_actions = [
             WindowEvent.PRESS_ARROW_LEFT,
             WindowEvent.PRESS_ARROW_RIGHT,
-            WindowEvent.PRESS_ARROW_DOWN,
-            WindowEvent.PRESS_ARROW_UP,
+            #WindowEvent.PRESS_ARROW_DOWN,
+            #WindowEvent.PRESS_ARROW_UP,
             WindowEvent.PRESS_BUTTON_A,
             WindowEvent.PRESS_BUTTON_B,
             WindowEvent.PASS,
@@ -155,7 +155,7 @@ class TetrisEnv(Env):
         score = self.get_score()
         logging.debug("Score: {}".format(score))
 
-        board_reward = self.get_board_score(observation)
+        #board_reward = self.get_board_score(observation)
         #placement_reward = self.get_placement_score(observation)
         #surface_score = self.get_surface_area(observation) * -1
         #print("Board Reward: {}".format(board_reward))
@@ -214,11 +214,20 @@ class TetrisEnv(Env):
         #print("Stack: {}".format(stack_score))
         #print("Completion: {}".format(completion_score))
         return stack_score
+        #return hole_score
+        #return completion_score
         #return hole_score + stack_score
         #return hole_score + stack_score + completion_score
     
+    # def get_max_height(self, board):
+    #     return np.max(np.sum(board, axis=0))
+    
     def get_max_height(self, board):
-        return np.max(np.sum(board, axis=0))
+        # Find the highest row index with at least one block
+        rows_with_blocks = np.any(board, axis=1)  # Boolean array: True for rows with blocks
+        if np.any(rows_with_blocks):  # Check if any row contains blocks
+            return len(board) - np.argmax(rows_with_blocks)  # Convert row index to height
+        return 0  # If no blocks are found, the height is 0
     
     def get_max_width(self, board):
         return np.max(np.sum(board, axis=1))
