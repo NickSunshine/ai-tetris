@@ -11,8 +11,16 @@ class ResidualBlock(nn.Module):
         self.bn2 = nn.BatchNorm2d(out_channels)
         self.relu = nn.ReLU()
 
+        # Add a 1x1 convolution to match the number of channels if needed
+        self.projection = None
+        if in_channels != out_channels:
+            self.projection = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0)
+
     def forward(self, x):
         identity = x
+        if self.projection is not None:
+            identity = self.projection(x)  # Transform identity to match out_channels
+
         out = self.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
         return self.relu(out + identity)
