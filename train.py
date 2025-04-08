@@ -49,39 +49,29 @@ def train(args):
     # Configure the environment
     agent_id = ULID()
 
-    # Use parallel environments for MlpPolicy, single environment for CnnPolicy
-    if args.policy == "MlpPolicy":
-        # Calculate total steps per update
-        total_steps_per_update = args.steps * args.n_envs
-        print(f"Total steps per update: {total_steps_per_update}")
+    # Use parallel environments for both MlpPolicy and CnnPolicy
+    # Calculate total steps per update
+    total_steps_per_update = args.steps * args.n_envs
+    print(f"Total steps per update: {total_steps_per_update}")
 
-        # Validate batch_size
-        if total_steps_per_update % args.batch_size != 0:
-            raise ValueError(f"batch_size ({args.batch_size}) must be a divisor of total steps per update ({total_steps_per_update}).")
+    # Validate batch_size
+    if total_steps_per_update % args.batch_size != 0:
+        raise ValueError(f"batch_size ({args.batch_size}) must be a divisor of total steps per update ({total_steps_per_update}).")
 
-        # Use make_vec_env with a callable function to create custom environments
-        env = make_vec_env(
-            env_id=lambda: TetrisEnv(
-                gb_path=args.rom,
-                action_freq=args.freq,
-                speedup=args.speedup,
-                init_state=args.init,
-                log_level=args.log_level,
-                window="headless"
-            ),
-            n_envs=args.n_envs,  # Use the value from the command-line argument
-            vec_env_cls=SubprocVecEnv,
-            seed=42
-        )
-    else:  # For CnnPolicy
-        env = TetrisEnv(
+    # Use make_vec_env with a callable function to create custom environments
+    env = make_vec_env(
+        env_id=lambda: TetrisEnv(
             gb_path=args.rom,
             action_freq=args.freq,
             speedup=args.speedup,
             init_state=args.init,
             log_level=args.log_level,
             window="headless"
-        )
+        ),
+        n_envs=args.n_envs,  # Use the value from the command-line argument
+        vec_env_cls=SubprocVecEnv,
+        seed=42
+    )
 
     # Set the device (CPU or GPU)
     device = "cpu" if args.force_cpu else "auto"  # Use "cpu" if --force-cpu is set, otherwise "auto"
