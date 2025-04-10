@@ -129,9 +129,12 @@ class TetrisEnv(Env):
          # Set reward equal to difference between current and previous score
         total_score = self.get_total_score(observation[0])
         # Calculate reward based on height changes
-        height_change = total_score - self.current_score
-        reward = (height_change * 10) if height_change > 0 else height_change  # Multiply positive changes by 10
-        reward += 0.001  # Add a small reward for every step
+        #height_change = total_score - self.current_score
+        #reward = (height_change * 10) if height_change > 0 else height_change  # Multiply positive changes by 10
+        #reward += 0.001  # Add a small reward for every step
+        
+        reward = total_score - self.current_score
+
         self.current_score = total_score
         self.board = observation
 
