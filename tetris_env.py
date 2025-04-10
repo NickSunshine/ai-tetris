@@ -137,8 +137,7 @@ class TetrisEnv(Env):
         reward = total_score - self.current_score
         
         # Calculate reward based on height changes
-        # Include line clears in Tetris-Gymnasium-like reward system
-        # Include line stacks in Custom reward system (line clears included in score calc. separately))
+        # Include line clears only in Tetris-Gymnasium-like reward system
         if self.reward_system == 1:
             reward = max(reward, 0) # Ignore negative values, only line clears count
                 
