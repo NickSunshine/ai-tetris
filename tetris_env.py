@@ -130,7 +130,7 @@ class TetrisEnv(Env):
             elif self.reward_system == 1:
                 return observation, -2, True, False, {}
             else:
-                return observation, -100, True, False, {}
+                return observation, -18, True, False, {}
 
         # Set reward equal to difference between current and previous score
         total_score = self.get_total_score(observation[0])
