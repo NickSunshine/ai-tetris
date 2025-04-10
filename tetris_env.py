@@ -123,12 +123,15 @@ class TetrisEnv(Env):
             # Game over
             ##return observation, -100, True, False, {}
             #return observation, -10, True, False, {}
-            #return observation, 0, True, False, {}
-            return observation, -2, True, False, {}
+            return observation, 0, True, False, {} # Reward 0
+            #return observation, -2, True, False, {} # Reward 1, 2
         
-        # Set reward equal to difference between current and previous score
+         # Set reward equal to difference between current and previous score
         total_score = self.get_total_score(observation[0])
-        reward = max((total_score - self.current_score), 0) + 0.001  # Ignore negative values and add 0.001
+        # Calculate reward based on height changes
+        height_change = total_score - self.current_score
+        reward = (height_change * 10) if height_change > 0 else height_change  # Multiply positive changes by 10
+        reward += 0.001  # Add a small reward for every step
         self.current_score = total_score
         self.board = observation
 
@@ -161,7 +164,7 @@ class TetrisEnv(Env):
         score = self.get_score()
         logging.debug("Score: {}".format(score))
 
-        board_reward = self.get_board_score(observation)
+        #board_reward = self.get_board_score(observation)
         #placement_reward = self.get_placement_score(observation)
         #surface_score = self.get_surface_area(observation) * -1
         #print("Board Reward: {}".format(board_reward))
@@ -169,8 +172,8 @@ class TetrisEnv(Env):
         #print("Surface Score: {}".format(surface_score))
 
         scores = [
-            #score,
-            board_reward,
+            score,
+            #board_reward,
             #placement_reward,
             #surface_score,
         ]
