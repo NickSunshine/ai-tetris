@@ -190,7 +190,19 @@ class TetrisEnv(Env):
         return np.sum(scores)
 
     def get_score(self):
-        return self.pyboy.get_memory_value(0xC0A0)
+        raw_value = self.pyboy.get_memory_value(0xC0A0)
+        # Convert the decimal value to a binary string
+        bit_string = f"{raw_value:b}"  # Convert to binary without the '0b' prefix
+
+        # Pad the bit string to ensure its length is a multiple of 4
+        bit_string = bit_string.zfill((len(bit_string) + 3) // 4 * 4)
+
+        # Split the bit string into 4-bit chunks and interpret as BCD
+        bcd_digits = [int(bit_string[i:i + 4], 2) for i in range(0, len(bit_string), 4)]
+
+        # Combine the BCD digits into a single decimal number
+        return int("".join(map(str, bcd_digits)))
+
     
     def get_placement_score(self, board):
         score = 0
