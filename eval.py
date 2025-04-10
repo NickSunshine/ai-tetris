@@ -21,6 +21,13 @@ def parse_args():
                         help="Render mode for the environment: 'SDL2' for visual rendering, 'headless' for no rendering.")
     parser.add_argument("--runs", type=int, default=1, help="Number of runs to evaluate the model.")
     parser.add_argument("--plot", action="store_true", help="Generate plots if this flag is provided.")
+    parser.add_argument(
+        "--reward",
+        type=int,
+        choices=[0, 1, 2],  # Define valid integer choices for reward systems
+        default=0,  # Default reward system
+        help="Reward system to use for the environment (0: Pure: score only, 1: Tetris-Gymnasium-like, 2: Custom: Score / TG-like merge)."
+    )
     return parser.parse_args()
 
 def eval(args):
@@ -67,7 +74,8 @@ def eval(args):
         speedup=args.speedup,
         init_state=args.init,
         log_level=args.log_level,
-        window=args.render_mode
+        window=args.render_mode,
+        reward_system=args.reward
     )
 
     # Load a model if specified, otherwise use a random policy
@@ -102,6 +110,8 @@ def eval(args):
             obs, reward, terminated, _, _ = env.step(action)
 
             # Accumulate the reward
+            if reward > 0:
+                print(f"Reward: {reward}")
             cumulative_reward += reward
 
             # Control the speed of the game during visual rendering
