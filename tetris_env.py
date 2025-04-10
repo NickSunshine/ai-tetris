@@ -202,6 +202,10 @@ class TetrisEnv(Env):
 
     def get_score(self):
         raw_value = self.pyboy.get_memory_value(0xC0A0)
+        
+        # Score is stored in BCD format, convert it to decimal
+        # https://datacrystal.tcrf.net/wiki/Tetris_(Game_Boy)/RAM_map
+        
         # Convert the decimal value to a binary string
         bit_string = f"{raw_value:b}"  # Convert to binary without the '0b' prefix
 
