@@ -122,25 +122,32 @@ class TetrisEnv(Env):
         observation = self.render()
         if observation[0][0].sum() >= len(observation[0][0]):
             # Game over
+            # Pure reward system: No game over penalty
+            # Tetris-Gymnasium-like reward system: Game over penalty of -2
+            # Custom reward system: Game over penalty of -100
             if self.reward_system == 0:
                 return observation, 0, True, False, {}
-            else:
+            elif self.reward_system == 1:
                 return observation, -2, True, False, {}
+            else:
+                return observation, -100, True, False, {}
 
-         # Set reward equal to difference between current and previous score
+        # Set reward equal to difference between current and previous score
         total_score = self.get_total_score(observation[0])
         reward = total_score - self.current_score
         
         # Calculate reward based on height changes
+        # Include line clears in Tetris-Gymnasium-like reward system
+        # Include line stacks in Custom reward system (line clears included in score calc. separately))
         if self.reward_system != 0:
             if self.reward_system == 1:
                 reward = max(reward, 0) # Ignore negative values, only line clears count
             elif self.reward_system == 2:
-                reward = (reward * 10) if reward > 0 else reward  # Multiply positive changes by 10, penalize height
-        
-        
+                reward = min(reward, 0) # Ignore positive values, only line stacks count 
+                
+        #Include step reward in Tetris-Gymnasium-like and Custom reward systems        
         if self.reward_system != 0:
-            reward += 0.001  # Add a small reward for every step for all systems except score-only
+            reward += 0.001
         self.current_score = total_score
         self.board = observation
 
@@ -170,13 +177,17 @@ class TetrisEnv(Env):
         return self.observation
 
     def get_total_score(self, observation):
-        score = self.get_score() if self.reward_system == 0 else 0
+        # Include score in Pure and Custom reward systems
+        score = self.get_score() if (self.reward_system == 0 or self.reward_system == 2) else 0
         logging.debug("Score: {}".format(score))
 
-        board_reward = self.get_board_score(observation) if self.reward_system != 0 else 0
+        # Include board score in Tetris-Gymnasium-like and Custom reward systems
+        board_reward = self.get_board_score(observation) if (self.reward_system == 1 or self.reward_system == 2) else 0
         logging.debug("Board Reward: {}".format(board_reward))
+
         #placement_reward = self.get_placement_score(observation)
         #surface_score = self.get_surface_area(observation) * -1
+
         #print("Board Reward: {}".format(board_reward))
         #print("Placement Reward: {}".format(placement_reward))
         #print("Surface Score: {}".format(surface_score))

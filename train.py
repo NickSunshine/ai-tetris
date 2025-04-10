@@ -36,7 +36,7 @@ def parse_args():
         type=int,
         choices=[0, 1, 2],  # Define valid integer choices for reward systems
         default=0,  # Default reward system
-        help="Reward system to use for the environment (0: score only, 1: Tetris-Gymnasium-like, 2: TG-like, but penalize height)."
+        help="Reward system to use for the environment (0: Pure: score only, 1: Tetris-Gymnasium-like, 2: Custom: score / TG-like merge)."
     )
     return parser.parse_args()
 
