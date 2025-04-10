@@ -139,11 +139,8 @@ class TetrisEnv(Env):
         # Calculate reward based on height changes
         # Include line clears in Tetris-Gymnasium-like reward system
         # Include line stacks in Custom reward system (line clears included in score calc. separately))
-        if self.reward_system != 0:
-            if self.reward_system == 1:
-                reward = max(reward, 0) # Ignore negative values, only line clears count
-            elif self.reward_system == 2:
-                reward = min(reward, 0) # Ignore positive values, only line stacks count 
+        if self.reward_system == 1:
+            reward = max(reward, 0) # Ignore negative values, only line clears count
                 
         #Include step reward in Tetris-Gymnasium-like and Custom reward systems        
         if self.reward_system != 0:
@@ -262,7 +259,7 @@ class TetrisEnv(Env):
         
         if self.reward_system == 1:
             return stack_score # Tetris-Gymnasium-like reward system
-        elif self.reward_system == 1:
+        elif self.reward_system == 2:
             return hole_score # Custom reward system
         else:
             return 0 # Shouldn't get called, but just in case.
