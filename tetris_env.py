@@ -205,7 +205,7 @@ class TetrisEnv(Env):
         
         # Score is stored in BCD format, convert it to decimal
         # https://datacrystal.tcrf.net/wiki/Tetris_(Game_Boy)/RAM_map
-        
+
         # Convert the decimal value to a binary string
         bit_string = f"{raw_value:b}"  # Convert to binary without the '0b' prefix
 
@@ -259,7 +259,15 @@ class TetrisEnv(Env):
         #print("Holes: {}".format(hole_score))
         #print("Stack: {}".format(stack_score))
         #print("Completion: {}".format(completion_score))
-        return stack_score
+        
+        if self.reward_system == 1:
+            return stack_score # Tetris-Gymnasium-like reward system
+        elif self.reward_system == 1:
+            return hole_score # Custom reward system
+        else:
+            return 0 # Shouldn't get called, but just in case.
+
+        #return stack_score
         #return hole_score
         #return completion_score
         #return hole_score + stack_score
