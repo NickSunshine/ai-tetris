@@ -31,6 +31,13 @@ def parse_args():
     parser.add_argument("--learning_rate", type=float, default=3e-4, help="Learning rate for training.")
     parser.add_argument("--force-cpu", action="store_true", help="Force the model to use the CPU, even if a GPU is available.")  # New argument
     parser.add_argument("--n_envs", type=int, default=4, help="Number of parallel environments for training.")  # Add this to parse_args()
+    parser.add_argument(
+        "--reward",
+        type=int,
+        choices=[0, 1, 2],  # Define valid integer choices for reward systems
+        default=0,  # Default reward system
+        help="Reward system to use for the environment (0: score only, 1: Tetris-Gymnasium-like, 2: TG-like, but penalize height)."
+    )
     return parser.parse_args()
 
 def train(args):
@@ -66,15 +73,16 @@ def train(args):
             speedup=args.speedup,
             init_state=args.init,
             log_level=args.log_level,
-            window="headless"
+            window="headless",
+            reward_system=args.reward
         ),
-        n_envs=args.n_envs,  # Use the value from the command-line argument
+        n_envs=args.n_envs,
         vec_env_cls=SubprocVecEnv,
         seed=42
     )
 
     # Set the device (CPU or GPU)
-    device = "cpu" if args.force_cpu else "auto"  # Use "cpu" if --force-cpu is set, otherwise "auto"
+    device = "cpu" if args.force_cpu else "auto"
 
     # Load metrics and the latest model if requested
     metrics_file = os.path.join(model_dir, "training_metrics.json")

@@ -44,13 +44,14 @@ class TetrisEnv(Env):
     reward system for the Tetris game.
     """
 
-    def __init__(self, gb_path="", init_state="", speedup=1, action_freq=24, window="SDL2", log_level="ERROR"):
+    def __init__(self, gb_path="", init_state="", speedup=1, action_freq=24, window="SDL2", log_level="ERROR", reward_system=0):
         self.gb_path = gb_path
         self.init_state = init_state
         self.speedup = speedup
         self.action_freq = action_freq
         self.window = window
         logging.basicConfig(level=log_level.upper())
+        self.reward_system = reward_system
 
         self.valid_actions = [
             WindowEvent.PRESS_ARROW_LEFT,
@@ -121,20 +122,25 @@ class TetrisEnv(Env):
         observation = self.render()
         if observation[0][0].sum() >= len(observation[0][0]):
             # Game over
-            ##return observation, -100, True, False, {}
-            #return observation, -10, True, False, {}
-            return observation, 0, True, False, {} # Reward 0
-            #return observation, -2, True, False, {} # Reward 1, 2
-        
+            if self.reward_system == 0:
+                return observation, 0, True, False, {}
+            else:
+                return observation, -2, True, False, {}
+
          # Set reward equal to difference between current and previous score
         total_score = self.get_total_score(observation[0])
-        # Calculate reward based on height changes
-        #height_change = total_score - self.current_score
-        #reward = (height_change * 10) if height_change > 0 else height_change  # Multiply positive changes by 10
-        #reward += 0.001  # Add a small reward for every step
-        
         reward = total_score - self.current_score
-
+        
+        # Calculate reward based on height changes
+        if self.reward_system != 0:
+            if self.reward_system == 1:
+                reward = max(reward, 0) # Ignore negative values, only line clears count
+            elif self.reward_system == 2:
+                reward = (reward * 10) if reward > 0 else reward  # Multiply positive changes by 10, penalize height
+        
+        
+        if self.reward_system != 0:
+            reward += 0.001  # Add a small reward for every step for all systems except score-only
         self.current_score = total_score
         self.board = observation
 
@@ -164,10 +170,11 @@ class TetrisEnv(Env):
         return self.observation
 
     def get_total_score(self, observation):
-        score = self.get_score()
+        score = self.get_score() if self.reward_system == 0 else 0
         logging.debug("Score: {}".format(score))
 
-        #board_reward = self.get_board_score(observation)
+        board_reward = self.get_board_score(observation) if self.reward_system != 0 else 0
+        logging.debug("Board Reward: {}".format(board_reward))
         #placement_reward = self.get_placement_score(observation)
         #surface_score = self.get_surface_area(observation) * -1
         #print("Board Reward: {}".format(board_reward))
@@ -176,7 +183,7 @@ class TetrisEnv(Env):
 
         scores = [
             score,
-            #board_reward,
+            board_reward,
             #placement_reward,
             #surface_score,
         ]
